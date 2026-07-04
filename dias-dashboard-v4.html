@@ -1,0 +1,529 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Диас · Аналитика</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#F4F5FB; --card:#FFFFFF; --ink:#141726; --muted:#6B7186; --faint:#9AA0B4;
+    --line:#E7E9F2;
+    --indigo:#4F46E5; --indigo2:#7C74F0; --indigo-soft:#EEEDFD;
+    --teal:#0D9488; --teal-soft:#E4F5F2;
+    --amber:#D97706; --amber-soft:#FCF1E1;
+    --red:#DC2626; --red-soft:#FCEBEA;
+    --green:#16A34A; --green-soft:#E7F6EC;
+    --pink:#DB2777; --sky:#0284C7;
+    --disp:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1020px;margin:0 auto;padding:24px 18px 70px}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* header */
+  .hero{background:linear-gradient(115deg,#4F46E5 0%,#7C74F0 55%,#9B7BF0 100%);border-radius:20px;padding:22px 24px;color:#fff;box-shadow:0 10px 30px -12px rgba(79,70,229,.5)}
+  .hero h1{font-family:var(--disp);font-weight:700;font-size:24px;margin:0;letter-spacing:-.02em}
+  .hero .sub{font-size:13.5px;opacity:.9;margin-top:3px}
+  .hero .tag{font-family:var(--mono);font-size:12px;opacity:.85;margin-top:10px}
+  .hero .tag b{font-weight:500}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+
+  /* connect */
+  #connect{margin-top:16px}
+  #connect label{display:block;font-weight:600;font-size:13px;margin-bottom:8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  input[type=text]{flex:1;min-width:240px;font-family:var(--mono);font-size:13px;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:#fff}
+  input[type=text]:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px var(--indigo-soft)}
+  button.go{font-family:var(--body);font-weight:600;font-size:14px;padding:12px 24px;border:none;border-radius:11px;background:var(--indigo);color:#fff;cursor:pointer}
+  button.go:hover{filter:brightness(1.05)} button.go:disabled{opacity:.5}
+  .privacy{margin-top:10px;font-size:12px;color:var(--faint)}
+  .status{margin-top:14px;font-size:13.5px;padding:12px 14px;border-radius:11px;display:none}
+  .status.err{display:block;background:var(--red-soft);border:1px solid #F3CFCC;color:var(--red)}
+  .status.busy{display:block;background:var(--indigo-soft);border:1px solid #DAD7FB;color:var(--indigo)}
+
+  /* tabs */
+  #dash{display:none;margin-top:18px}
+  .tabs{display:flex;gap:6px;background:#E9EAF4;padding:5px;border-radius:14px;width:fit-content;max-width:100%;overflow:auto}
+  .tabs button{border:none;background:none;font-family:var(--disp);font-weight:600;font-size:14px;color:var(--muted);padding:9px 18px;border-radius:10px;cursor:pointer;white-space:nowrap}
+  .tabs button.on{background:#fff;color:var(--indigo);box-shadow:0 2px 6px rgba(20,23,38,.08)}
+  .pane{display:none;margin-top:18px} .pane.on{display:block}
+  .seg{display:inline-flex;background:#E9EAF4;border-radius:11px;padding:4px;margin-bottom:12px;flex-wrap:wrap}
+  .seg button{border:none;background:none;font-family:var(--body);font-weight:600;font-size:13px;color:var(--muted);padding:7px 15px;border-radius:8px;cursor:pointer}
+  .seg button.on{background:#fff;color:var(--indigo);box-shadow:0 1px 3px rgba(20,23,38,.1)}
+  .pill.teal{background:var(--teal-soft);color:var(--teal)} .pill.grey{background:#EEF0F4;color:var(--faint)}
+
+  .pick{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .pick .lbl{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .selwrap{position:relative}
+  select{appearance:none;font-family:var(--disp);font-weight:600;font-size:16px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 40px 10px 15px;cursor:pointer;color:var(--ink)}
+  select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px var(--indigo-soft)}
+  .selwrap::after{content:"▾";position:absolute;right:15px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none}
+  .toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);cursor:pointer}
+  .toggle input{accent-color:var(--indigo);width:16px;height:16px}
+
+  /* stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px 17px;position:relative;overflow:hidden}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--indigo)}
+  .stat.c-money::before{background:var(--teal)} .stat.c-green::before{background:var(--green)}
+  .stat.c-amber::before{background:var(--amber)} .stat.c-red::before{background:var(--red)} .stat.c-sky::before{background:var(--sky)}
+  .stat .k{font-size:12px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:6px}
+  .stat .v{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:-.02em;margin-top:7px;display:flex;align-items:baseline;gap:6px}
+  .stat .v .unit{font-size:12px;font-weight:600;color:var(--faint);font-family:var(--body)}
+  .stat .s{font-size:12px;color:var(--faint);margin-top:3px}
+  .ic{width:16px;height:16px;flex:none}
+
+  h2{font-family:var(--disp);font-weight:600;font-size:16px;margin:26px 0 3px;display:flex;align-items:center;gap:8px}
+  .note{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+
+  /* funnel */
+  .funnel{display:flex;flex-direction:column;gap:3px}
+  .stage .bar{position:relative;height:48px;border-radius:9px;background:#F0F1F8;overflow:hidden;display:flex;align-items:center}
+  .stage .fill{position:absolute;left:0;top:0;bottom:0;border-radius:9px;transition:width .6s cubic-bezier(.2,.7,.2,1)}
+  .stage .lab{position:relative;z-index:2;padding:0 15px;display:flex;align-items:center;justify-content:space-between;width:100%}
+  .stage .name{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .stage .figs{display:flex;gap:14px;align-items:baseline}
+  .stage .figs .cnt{font-family:var(--mono);font-size:14px;color:#fff}
+  .stage .figs .sum{font-family:var(--mono);font-size:12px;color:#fff;opacity:.85}
+  .stage.thin .name,.stage.thin .cnt,.stage.thin .sum{color:var(--ink);text-shadow:none}
+  .stage.thin .sum{opacity:.6}
+  .conv{font-size:11px;color:var(--faint);text-align:right;padding:2px 4px 4px;font-variant-numeric:tabular-nums}
+  .conv b{color:var(--amber);font-weight:600}
+  .ends{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
+  .endchip{flex:1;min-width:150px;border-radius:13px;padding:13px 16px;border:1px solid}
+  .endchip.win{background:var(--green-soft);border-color:#C7EAD1}
+  .endchip.lose{background:var(--red-soft);border-color:#F3D3D1}
+  .endchip .t{font-size:12px;font-weight:600} .endchip.win .t{color:var(--green)} .endchip.lose .t{color:var(--red)}
+  .endchip .n{font-family:var(--disp);font-weight:700;font-size:21px;margin-top:2px}
+  .endchip .m{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:1px}
+
+  /* bottleneck bars */
+  .blist{display:flex;flex-direction:column;gap:10px}
+  .brow{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:center}
+  .brow .bn{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brow .btrack{height:22px;background:#F0F1F8;border-radius:6px;position:relative;overflow:hidden}
+  .brow .bfill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;transition:width .5s}
+  .brow .bval{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:12px;font-weight:500}
+
+  /* workload */
+  .wrow{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin-bottom:11px}
+  .wname{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}
+  .av{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--disp);font-weight:600;font-size:12px}
+  .wbar{height:26px;background:#F0F1F8;border-radius:7px;position:relative;overflow:hidden;display:flex}
+  .wseg{height:100%;transition:width .5s}
+  .wseg.open{background:linear-gradient(90deg,#4F46E5,#7C74F0)}
+  .wseg.over{background:linear-gradient(90deg,#DC2626,#F0685E)}
+  .wcount{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink)}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-weight:600;font-size:12px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:10px;border-bottom:1px solid #F1F2F8}
+  td.r{text-align:right;font-family:var(--mono)}
+  .pill{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:500;padding:2px 9px;border-radius:20px}
+  .pill.amber{background:var(--amber-soft);color:var(--amber)} .pill.red{background:var(--red-soft);color:var(--red)}
+  td a{color:var(--indigo);text-decoration:none} td a:hover{text-decoration:underline}
+  .emptybox{padding:24px;text-align:center;color:var(--faint);font-size:14px}
+  .thctl{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-bottom:12px}
+  .thctl input[type=range]{accent-color:var(--amber);flex:1;max-width:260px}
+
+  /* legend */
+  .leg{display:flex;flex-direction:column;gap:16px}
+  .legblock h3{font-family:var(--disp);font-size:15px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+  .legrow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #F1F2F8;font-size:13.5px}
+  .legrow:last-child{border:none}
+  .legrow .swatch{width:16px;height:16px;border-radius:5px;flex:none;margin-top:2px}
+  .legrow b{font-weight:600}
+  .chip{display:inline-block;font-family:var(--mono);font-size:12px;padding:1px 8px;border-radius:6px;background:#F0F1F8;color:var(--ink)}
+  .bench{background:var(--indigo-soft);border:1px solid #DAD7FB;border-radius:12px;padding:14px 16px;font-size:13px}
+  .bench b{color:var(--indigo)}
+
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}.wrow{grid-template-columns:110px 1fr}.brow{grid-template-columns:1fr 90px}}
+</style>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Диас · Аналитика</h1>
+    <div class="sub">Заявки, воронки, заторы по стадиям и загрузка команды</div>
+    <div class="tag" id="portalTag"></div>
+  </div>
+
+  <div class="card" id="connect">
+    <label for="hook">Ссылка входящего вебхука</label>
+    <div class="row">
+      <input type="text" id="hook" placeholder="https://dias.bitrix24.kz/rest/114/код/" autocomplete="off" spellcheck="false" autocapitalize="none" autocorrect="off" inputmode="url">
+      <button class="go" id="loadBtn" type="button" onclick="load()">Загрузить</button>
+    </div>
+    <div class="privacy">Ссылка используется только для запроса к порталу Диас из этого окна и никуда не передаётся.</div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="dash">
+    <div class="tabs">
+      <button data-t="deals" class="on">Сделки</button>
+      <button data-t="tasks">Задачи</button>
+      <button data-t="legend">Обозначения</button>
+    </div>
+
+    <!-- DEALS -->
+    <div class="pane on" id="pane-deals">
+      <div class="pick">
+        <span class="lbl">Воронка</span>
+        <div class="selwrap"><select id="pipeSel"></select></div>
+        <label class="toggle"><input type="checkbox" id="openOnly" checked> только открытые</label>
+      </div>
+      <div class="stats" id="dealStats"></div>
+
+      <h2>📊 Воронка по стадиям</h2>
+      <p class="note">Открытые заявки по стадиям. Крупная цифра — <b>количество (шт.)</b>, серая ниже — <b>сумма (₸)</b>. Под полосой — сколько заявок уходит на следующую стадию.</p>
+      <div class="card"><div class="funnel" id="funnel"></div><div class="ends" id="ends"></div></div>
+
+      <h2>🐌 Где тормозят стадии</h2>
+      <p class="note">Средний простой заявок, которые <b>сейчас</b> стоят на стадии (дней с последнего изменения). Чем длиннее полоса — тем сильнее затор.</p>
+      <div class="card"><div class="blist" id="bottleneck"></div></div>
+
+      <h2>⚠️ Зависшие заявки</h2>
+      <p class="note">Открытые заявки без движения дольше порога. Кликабельны — открывают карточку в Битриксе.</p>
+      <div class="card">
+        <div class="thctl">без движения ≥ <b id="thVal" class="num">14</b> дн. <input type="range" id="thresh" min="3" max="120" value="14"></div>
+        <div id="stuckWrap"></div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="pane" id="pane-tasks">
+      <div class="pick">
+        <span class="lbl">Сотрудник</span>
+        <div class="selwrap"><select id="taskUser"><option value="">Все сотрудники</option></select></div>
+      </div>
+      <div class="stats" id="taskStats"></div>
+
+      <h2>👥 Загрузка по сотрудникам</h2>
+      <p class="note"><span style="color:var(--indigo)">■</span> активные задачи &nbsp; <span style="color:var(--red)">■</span> из них просроченные. Цифра справа — всего активных задач (шт.) у сотрудника.</p>
+      <div class="card"><div id="workload"></div></div>
+
+      <h2>📋 Список задач сотрудника</h2>
+      <div class="seg" id="taskMode">
+        <button data-m="over" class="on">Просроченные</button>
+        <button data-m="active">В работе (в срок)</button>
+        <button data-m="all">Все активные</button>
+      </div>
+      <p class="note" id="taskListNote"></p>
+      <div class="card"><div id="taskListWrap"></div></div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="pane" id="pane-legend">
+      <div class="card leg">
+        <div class="legblock">
+          <h3>🔢 Что за цифры</h3>
+          <div class="legrow"><span class="chip">шт.</span><div><b>Количество</b> — сколько заявок или задач. Это всегда крупная цифра.</div></div>
+          <div class="legrow"><span class="chip">₸</span><div><b>Сумма</b> — деньги по заявкам (поле «Сумма сделки»). Идёт рядом или под количеством, серым.</div></div>
+          <div class="legrow"><span class="chip">дн.</span><div><b>Простой</b> — сколько дней прошло с последнего изменения. Чем больше — тем дольше «висит».</div></div>
+        </div>
+        <div class="legblock">
+          <h3>🎨 Цвета</h3>
+          <div class="legrow"><span class="swatch" style="background:var(--indigo)"></span><div><b>Синий</b> — в работе / активное.</div></div>
+          <div class="legrow"><span class="swatch" style="background:var(--green)"></span><div><b>Зелёный</b> — успешно завершено (заявка на складе, задача сдана в срок).</div></div>
+          <div class="legrow"><span class="swatch" style="background:var(--amber)"></span><div><b>Оранжевый</b> — внимание: затор, простой, приближается к проблеме.</div></div>
+          <div class="legrow"><span class="swatch" style="background:var(--red)"></span><div><b>Красный</b> — проблема: отменено или просрочено.</div></div>
+        </div>
+        <div class="legblock">
+          <h3>📐 Как читать разделы</h3>
+          <div class="legrow"><span class="swatch" style="background:var(--indigo2)"></span><div><b>Воронка</b> — ширина полосы = количество заявок на стадии. Проценты снизу = сколько доходит до следующей стадии.</div></div>
+          <div class="legrow"><span class="swatch" style="background:var(--amber)"></span><div><b>Где тормозят</b> — средний простой заявок на каждой стадии. Длинная полоса = стадия-«болото».</div></div>
+          <div class="legrow"><span class="swatch" style="background:var(--indigo)"></span><div><b>Загрузка</b> — сколько задач на каждом сотруднике; красный кусок = просроченные.</div></div>
+        </div>
+        <div class="legblock">
+          <h3>📌 Ориентиры (эталоны)</h3>
+          <div class="bench">
+            Задачи в срок: хорошо <b>85–90%</b>, отлично <b>92%+</b>.<br>
+            Загрузка сотрудника: комфортно <b>70–80%</b> занятости, выше — риск перегруза.<br>
+            Просрочка: чем меньше, тем лучше; сначала разбираем просроченные <b>важные</b> задачи.<br>
+            <span style="color:var(--muted)">Это стартовые B2B-ориентиры. Через квартал-два заменить на свои исторические цифры Диаса — они точнее.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener("error",function(e){var s=document.getElementById("status");if(s){s.className="status err";s.innerHTML="Ошибка на этом устройстве: "+(e.message||e)+((e.filename?" ("+(e.lineno||"")+")":""));}});
+window.addEventListener("unhandledrejection",function(e){var s=document.getElementById("status");if(s){s.className="status err";s.innerHTML="Сбой запроса: "+((e.reason&&e.reason.message)||e.reason||"неизвестно");}});
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+let BASE="", RAW=[], CATS=[], STAGES={}, USERS={}, TASKS=[];
+const PAL=["#4F46E5","#0D9488","#DB2777","#D97706","#0284C7","#7C3AED","#16A34A","#DC2626","#0891B2","#CA8A04"];
+const fmtMoney=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(Math.round(n||0));
+const fmtInt=n=>new Intl.NumberFormat('ru-RU').format(n||0);
+const daysSince=d=>{const t=new Date(d);return isNaN(t)?null:Math.floor((Date.now()-t)/864e5);};
+function normBase(v){v=v.trim();if(!v)return"";if(!/^https?:\/\//.test(v))v="https://"+v;if(!v.endsWith("/"))v+="/";return v;}
+function stt(cls,html){const s=$("#status");s.className="status "+cls;s.innerHTML=html;}
+function clr(){$("#status").className="status";$("#status").innerHTML="";}
+const initials=n=>{const p=(n||"?").trim().split(/\s+/);return((p[0]||"")[0]||"")+((p[1]||"")[0]||"");};
+
+// tabs
+$$(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  $$(".tabs button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  $$(".pane").forEach(p=>p.classList.remove("on"));$("#pane-"+b.dataset.t).classList.add("on");
+}));
+
+$("#loadBtn").addEventListener("click",load);
+async function load(){
+  stt("busy","Запускаю…");
+  const b=normBase($("#hook").value);
+  if(!b){stt("err","Вставьте ссылку вебхука.");return;}
+  BASE=b;clr();$("#loadBtn").disabled=true;
+  try{
+    stt("busy","Загружаю воронки…");await loadCats(b);
+    stt("busy","Загружаю стадии…");await loadStages(b);
+    stt("busy","Загружаю сотрудников…");await loadUsers(b);
+    stt("busy","Загружаю заявки…");await loadDeals(b);
+    stt("busy","Загружаю задачи…");await loadTasks(b);
+    $("#loadBtn").disabled=false;clr();
+    $("#portalTag").innerHTML="портал <b>"+b.split("/")[2]+"</b> · заявок: <b>"+fmtInt(RAW.length)+"</b> · задач: <b>"+fmtInt(TASKS.length)+"</b>";
+    $("#dash").style.display="block";$("#connect").style.borderColor="var(--teal)";
+    buildPicker();renderTasks();
+  }catch(e){
+    $("#loadBtn").disabled=false;
+    stt("err","Не удалось получить данные из браузера (портал блокирует запрос — CORS). Такое надёжно решается в приложении Cowork, где вебхук хранится в проекте. Ошибка: "+(e.message||e));
+  }
+}
+
+async function jget(url){const r=await fetch(url);const j=await r.json();if(j.error)throw new Error(j.error_description||j.error);return j;}
+
+async function loadCats(b){
+  CATS=[];
+  try{const j=await jget(b+"crm.category.list.json?entityTypeId=2");
+    if(j.result&&j.result.categories)CATS=j.result.categories.map(c=>({id:String(c.id),name:c.name||("Воронка "+c.id)}));}catch(e){}
+  if(!CATS.length){try{const j=await jget(b+"crm.dealcategory.list.json");
+    CATS=[{id:"0",name:"Общая воронка"}].concat((j.result||[]).map(c=>({id:String(c.ID),name:c.NAME})));}catch(e){CATS=[{id:"0",name:"Все заявки"}];}}
+}
+async function loadStages(b){
+  for(const c of CATS){try{const j=await jget(b+"crm.dealcategory.stage.list.json?id="+c.id);
+    STAGES[c.id]=(j.result||[]).map(s=>({id:s.STATUS_ID,name:s.NAME,sem:s.SEMANTICS}));}catch(e){STAGES[c.id]=[];}}
+}
+async function loadUsers(b){
+  let start=0,p=0;
+  do{let j;try{j=await jget(b+"user.get.json?start="+start);}catch(e){break;}
+    (j.result||[]).forEach(u=>{USERS[String(u.ID)]=((u.NAME||"")+" "+(u.LAST_NAME||"")).trim()||("ID "+u.ID);});
+    start=j.next;p++;}while(start!==undefined&&start!==null&&p<40);
+}
+async function loadDeals(b){
+  let all=[],start=0,p=0,total=null;
+  do{const url=b+"crm.deal.list.json?"+["ID","TITLE","STAGE_ID","STAGE_SEMANTIC_ID","CATEGORY_ID","OPPORTUNITY","CURRENCY_ID","DATE_MODIFY","CLOSED"].map(f=>"select[]="+f).join("&")+"&start="+start;
+    const j=await jget(url);all=all.concat(j.result||[]);total=j.total;start=j.next;p++;
+  }while(start!==undefined&&start!==null&&p<120);
+  RAW=all;
+}
+async function loadTasks(b){
+  let all=[],start=0,p=0;
+  do{const url=b+"tasks.task.list.json?"+["ID","TITLE","RESPONSIBLE_ID","STATUS","DEADLINE","CLOSED_DATE"].map(f=>"select[]="+f).join("&")+"&start="+start;
+    let j;try{j=await jget(url);}catch(e){break;}
+    const arr=(j.result&&j.result.tasks)?j.result.tasks:[];
+    all=all.concat(arr);start=j.next;p++;
+  }while(start!==undefined&&start!==null&&p<120);
+  // нормализуем ключи (в tasks.task.list они camelCase)
+  TASKS=all.map(t=>({
+    id:t.id||t.ID, title:t.title||t.TITLE,
+    resp:String(t.responsibleId||t.RESPONSIBLE_ID||""),
+    status:String(t.status||t.STATUS||""),
+    deadline:t.deadline||t.DEADLINE||null,
+    closed:t.closedDate||t.CLOSED_DATE||null
+  }));
+}
+
+/* ===== DEALS ===== */
+function buildPicker(){
+  const counts={};RAW.forEach(d=>{const c=String(d.CATEGORY_ID||"0");counts[c]=(counts[c]||0)+1;});
+  const sel=$("#pipeSel");sel.innerHTML="";
+  CATS.filter(c=>counts[c.id]).sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)).forEach(c=>{
+    const o=document.createElement("option");o.value=c.id;o.textContent=c.name+" ("+fmtInt(counts[c.id])+")";sel.appendChild(o);});
+  sel.onchange=renderDeals;$("#openOnly").onchange=renderDeals;
+  $("#thresh").oninput=()=>{$("#thVal").textContent=$("#thresh").value;renderDeals();};
+  renderDeals();
+}
+function renderDeals(){
+  const cat=$("#pipeSel").value, openOnly=$("#openOnly").checked;
+  const stages=STAGES[cat]||[];
+  const deals=RAW.filter(d=>String(d.CATEGORY_ID||"0")===cat);
+  const cur=(deals.find(d=>d.CURRENCY_ID)||{}).CURRENCY_ID||"₸";
+
+  // надёжный тип стадии: справочник стадий + признак из самих сделок
+  const stageSem={};
+  stages.forEach(s=>{if(s.sem==="S"||s.sem==="F"||s.sem==="P")stageSem[s.id]=s.sem;});
+  deals.forEach(d=>{const v=d.STAGE_SEMANTIC_ID;if((v==="S"||v==="F"||v==="P")&&!stageSem[d.STAGE_ID])stageSem[d.STAGE_ID]=v;});
+  const proc=stages.filter(s=>stageSem[s.id]!=="S"&&stageSem[s.id]!=="F");
+
+  // тип конкретной сделки: сначала по её стадии, затем по полю сделки, затем запасной вариант
+  const sem=d=>{
+    const ss=stageSem[d.STAGE_ID];
+    if(ss==="S"||ss==="F")return ss;
+    const v=d.STAGE_SEMANTIC_ID;
+    if(v==="S"||v==="F"||v==="P")return v;
+    if(ss==="P")return "P";
+    return d.CLOSED==="Y"?"F":"P";
+  };
+  const open=deals.filter(d=>sem(d)==="P");
+  const won=deals.filter(d=>sem(d)==="S");
+  const lost=deals.filter(d=>sem(d)==="F");
+  const openSum=open.reduce((a,d)=>a+ +(d.OPPORTUNITY||0),0);
+  const wonSum=won.reduce((a,d)=>a+ +(d.OPPORTUNITY||0),0);
+
+  $("#dealStats").innerHTML=[
+    stat("Заявок в работе",fmtInt(open.length),"шт.","открытых","c-indigo",iconBox),
+    stat("Сумма в работе",fmtMoney(openSum),cur,"по открытым","c-money",iconMoney),
+    stat("Выполнено",fmtInt(won.length),"шт.",fmtMoney(wonSum)+" "+cur,"c-green",iconCheck),
+    stat("Отменено",fmtInt(lost.length),"шт.","закрыто без результата","c-red",iconX)
+  ].join("");
+
+  // funnel
+  const src=openOnly?open:deals, cnt={},sum={};
+  proc.forEach(s=>{cnt[s.id]=0;sum[s.id]=0;});
+  src.forEach(d=>{if(cnt[d.STAGE_ID]!==undefined){cnt[d.STAGE_ID]++;sum[d.STAGE_ID]+= +(d.OPPORTUNITY||0);}});
+  const max=Math.max(...proc.map(s=>cnt[s.id]),1);
+  let fh="";
+  proc.forEach((s,i)=>{
+    const n=cnt[s.id], w=n?Math.max(n/max*100,8):4, thin=w<38, col=PAL[i%PAL.length];
+    fh+=`<div class="stage ${thin?'thin':''}"><div class="bar">
+      <div class="fill" style="width:${w}%;background:linear-gradient(90deg,${col},${col}cc)"></div>
+      <div class="lab"><span class="name">${s.name}</span>
+        <span class="figs"><span class="cnt">${fmtInt(n)} шт.</span><span class="sum">${fmtMoney(sum[s.id])} ${cur}</span></span></div></div>`;
+    if(i<proc.length-1){const nx=cnt[proc[i+1].id], cv=n?Math.round(nx/n*100):0, dr=n-nx;
+      fh+=`<div class="conv">↓ дальше проходит <b>${cv}%</b>${dr>0?` · застревает ${fmtInt(dr)} шт.`:""}</div>`;}
+    fh+=`</div>`;
+  });
+  $("#funnel").innerHTML=fh||`<div class="emptybox">У этой воронки нет процессных стадий с данными.</div>`;
+  $("#ends").innerHTML=
+    `<div class="endchip win"><div class="t">✓ Успешно завершено</div><div class="n num">${fmtInt(won.length)} шт.</div><div class="m">${fmtMoney(wonSum)} ${cur}</div></div>`+
+    `<div class="endchip lose"><div class="t">✕ Отменено</div><div class="n num">${fmtInt(lost.length)} шт.</div><div class="m">закрыто без результата</div></div>`;
+
+  // bottleneck: средний простой открытых заявок на каждой процессной стадии
+  const agg={};proc.forEach(s=>agg[s.id]={sum:0,n:0});
+  open.forEach(d=>{if(agg[d.STAGE_ID]){const ds=daysSince(d.DATE_MODIFY);if(ds!=null){agg[d.STAGE_ID].sum+=ds;agg[d.STAGE_ID].n++;}}});
+  const brows=proc.map(s=>({name:s.name,avg:agg[s.id].n?Math.round(agg[s.id].sum/agg[s.id].n):0,n:agg[s.id].n}))
+                  .filter(r=>r.n>0).sort((a,b)=>b.avg-a.avg);
+  const bmax=Math.max(...brows.map(r=>r.avg),1);
+  $("#bottleneck").innerHTML=brows.length?brows.map(r=>{
+    const w=Math.max(r.avg/bmax*100,4), col=r.avg>=30?"var(--red)":r.avg>=14?"var(--amber)":"var(--teal)";
+    return `<div class="brow"><div class="bn">${r.name} <span style="color:var(--faint)">· ${fmtInt(r.n)} шт.</span></div>
+      <div class="btrack"><div class="bfill" style="width:${w}%;background:${col}"></div><span class="bval">${r.avg} дн.</span></div></div>`;
+  }).join(""):`<div class="emptybox">Нет открытых заявок для расчёта простоя.</div>`;
+
+  // stuck
+  const th=+$("#thresh").value;
+  const stuck=open.map(d=>({d,days:daysSince(d.DATE_MODIFY)})).filter(x=>x.days!=null&&x.days>=th).sort((a,b)=>b.days-a.days);
+  const stMap={};stages.forEach(s=>stMap[s.id]=s.name);
+  const portal=BASE.split("/").slice(0,3).join("/");
+  $("#stuckWrap").innerHTML=stuck.length?
+    `<table><thead><tr><th>Заявка</th><th>Стадия</th><th style="text-align:right">Сумма</th><th style="text-align:right">Простой</th></tr></thead><tbody>`+
+    stuck.slice(0,50).map(x=>{const d=x.d,nm=d.TITLE||("Заявка #"+d.ID);
+      return `<tr><td><a href="${portal}/crm/deal/details/${d.ID}/" target="_blank">${nm}</a></td>
+        <td>${stMap[d.STAGE_ID]||d.STAGE_ID}</td><td class="r">${fmtMoney(d.OPPORTUNITY)} ${cur}</td>
+        <td class="r"><span class="pill ${x.days>=30?'red':'amber'}">${x.days} дн.</span></td></tr>`;}).join("")+
+    `</tbody></table>`+(stuck.length>50?`<div class="conv" style="text-align:center;padding:10px">…и ещё ${fmtInt(stuck.length-50)} шт.</div>`:"")
+    :`<div class="emptybox">Чисто — зависших заявок по порогу ${th} дн. нет.</div>`;
+}
+
+/* ===== TASKS ===== */
+function fillTaskUsers(){
+  const sel=$("#taskUser");if(sel.dataset.filled)return;
+  const cnt={};TASKS.forEach(t=>{if(t.resp)cnt[t.resp]=(cnt[t.resp]||0)+1;});
+  Object.keys(cnt).map(u=>({u,name:USERS[u]||("ID "+u),n:cnt[u]})).sort((a,b)=>b.n-a.n)
+    .forEach(x=>{const o=document.createElement("option");o.value=x.u;o.textContent=x.name+" ("+fmtInt(x.n)+")";sel.appendChild(o);});
+  sel.dataset.filled="1";sel.onchange=renderTasks;
+  $$("#taskMode button").forEach(b=>b.addEventListener("click",()=>{
+    $$("#taskMode button").forEach(x=>x.classList.remove("on"));b.classList.add("on");renderTasks();
+  }));
+}
+function renderTasks(){
+  fillTaskUsers();
+  const now=Date.now();
+  const uf=$("#taskUser").value; // фильтр по сотруднику ("" = все)
+  const scope=uf?TASKS.filter(t=>t.resp===uf):TASKS;
+  const done=t=>t.status==="5";
+  const overdue=t=>!done(t)&&t.deadline&&new Date(t.deadline).getTime()<now;
+  const active=scope.filter(t=>!done(t));
+  const over=scope.filter(overdue);
+  const completed=scope.filter(done);
+  const onTime=completed.filter(t=>t.deadline&&t.closed&&new Date(t.closed)<=new Date(t.deadline));
+  const onTimePct=completed.length?Math.round(onTime.length/completed.length*100):null;
+
+  $("#taskStats").innerHTML=[
+    stat("Активных задач",fmtInt(active.length),"шт.","в работе сейчас","c-indigo",iconList),
+    stat("Просрочено",fmtInt(over.length),"шт.","дедлайн прошёл","c-red",iconClock),
+    stat("Выполнено в срок",onTimePct==null?"—":onTimePct,onTimePct==null?"":"%",
+         "эталон 85–90%",onTimePct==null?"c-sky":(onTimePct>=85?"c-green":onTimePct>=70?"c-amber":"c-red"),iconCheck),
+    stat("Всего закрыто",fmtInt(completed.length),"шт.","за всё время","c-sky",iconDone)
+  ].join("");
+
+  // workload — при фильтре показываем только выбранного, иначе всех
+  const byU={};
+  active.forEach(t=>{const u=t.resp||"—";(byU[u]=byU[u]||{open:0,over:0}).open++;});
+  over.forEach(t=>{const u=t.resp||"—";(byU[u]=byU[u]||{open:0,over:0});byU[u].over++;});
+  const rows=Object.entries(byU).map(([u,v])=>({u,name:USERS[u]||("ID "+u),open:v.open,over:v.over}))
+                    .sort((a,b)=>b.open-a.open);
+  const wmax=Math.max(...rows.map(r=>r.open),1);
+  $("#workload").innerHTML=rows.length?rows.map((r,i)=>{
+    const wOpen=(r.open-r.over)/wmax*100, wOver=r.over/wmax*100, col=PAL[i%PAL.length];
+    return `<div class="wrow"><div class="wname"><span class="av" style="background:${col}">${initials(r.name).toUpperCase()||"?"}</span>${r.name}</div>
+      <div class="wbar"><div class="wseg open" style="width:${wOpen}%"></div><div class="wseg over" style="width:${wOver}%"></div>
+      <span class="wcount">${fmtInt(r.open)} шт.${r.over?` · <span style="color:var(--red)">${fmtInt(r.over)} просроч.</span>`:""}</span></div></div>`;
+  }).join(""):`<div class="emptybox">Активных задач нет.</div>`;
+
+  // список задач по выбранному режиму
+  const mode=($("#taskMode .on")||{dataset:{}}).dataset.m||"over";
+  const portal=BASE.split("/").slice(0,3).join("/");
+  const hasDL=t=>t.deadline&&!isNaN(new Date(t.deadline));
+  const isOver=t=>hasDL(t)&&new Date(t.deadline).getTime()<now;
+  let list, note;
+  if(mode==="over"){
+    list=active.filter(isOver).sort((a,b)=>new Date(a.deadline)-new Date(b.deadline));
+    note="Дедлайн прошёл, задача не закрыта. От самых давних просрочек.";
+  }else if(mode==="active"){
+    list=active.filter(t=>!isOver(t)).sort((a,b)=>{
+      if(hasDL(a)&&hasDL(b))return new Date(a.deadline)-new Date(b.deadline);
+      return hasDL(a)?-1:hasDL(b)?1:0;});
+    note="Задачи в работе, срок ещё не прошёл (или без срока). Сначала — ближайшие дедлайны.";
+  }else{
+    list=active.slice().sort((a,b)=>{
+      const ao=isOver(a),bo=isOver(b);if(ao!==bo)return ao?-1:bo?1:0;
+      if(hasDL(a)&&hasDL(b))return new Date(a.deadline)-new Date(b.deadline);
+      return hasDL(a)?-1:hasDL(b)?1:0;});
+    note="Все незакрытые задачи: сверху просроченные, затем по ближайшему дедлайну.";
+  }
+  $("#taskListNote").textContent=note;
+
+  function pill(t){
+    if(!hasDL(t))return `<span class="pill grey">без срока</span>`;
+    const d=daysSince(t.deadline);
+    if(d>0)return `<span class="pill ${d>=14?'red':'amber'}">−${d} дн.</span>`;      // просрочено
+    if(d===0)return `<span class="pill amber">сегодня</span>`;
+    return `<span class="pill teal">через ${Math.abs(d)} дн.</span>`;                 // ещё в срок
+  }
+  const cap=uf?list.length:50;
+  $("#taskListWrap").innerHTML=list.length?
+    `<table><thead><tr><th>Задача</th><th>Ответственный</th><th style="text-align:right">Срок</th></tr></thead><tbody>`+
+    list.slice(0,cap).map(t=>`<tr><td><a href="${portal}/company/personal/user/${t.resp}/tasks/task/view/${t.id}/" target="_blank">${t.title||("Задача #"+t.id)}</a></td>
+      <td>${USERS[t.resp]||("ID "+t.resp)}</td><td class="r">${pill(t)}</td></tr>`).join("")+
+    `</tbody></table>`+(list.length>cap?`<div class="conv" style="text-align:center;padding:10px">…и ещё ${fmtInt(list.length-cap)} шт. — выберите сотрудника, чтобы увидеть все</div>`:"")
+    :`<div class="emptybox">${mode==="over"?"Просроченных задач нет 🎉":"Нет задач в этом режиме."}</div>`;
+}
+
+/* helpers */
+function stat(k,v,unit,s,cls,icon){
+  const c=cls.replace("c-indigo","");
+  return `<div class="stat ${c}"><div class="k">${icon} ${k}</div>
+    <div class="v num">${v}<span class="unit">${unit}</span></div><div class="s">${s}</div></div>`;
+}
+const iconBox='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg>';
+const iconMoney='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h4a2 2 0 010 4H9"/></svg>';
+const iconCheck='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
+const iconX='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+const iconList='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+const iconClock='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+const iconDone='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>';
+</script>
